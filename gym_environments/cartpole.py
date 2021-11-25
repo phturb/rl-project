@@ -5,7 +5,7 @@ CARTPOLE = {
     'embedding': None,
     'seed': 200,
     'input_shape': (4,),
-    'load_path' : 'models/cart_pole_ddqn_dueling.h5',
+    'model_path' : 'models/cart_pole_ddqn_dueling.h5',
     'rewards_path': 'rewards/cart_pole_ddqn_dueling.json',
     'plot_path': 'plots/cart_pole_ddqn_dueling.png',
     'layers' : [16, 32, 16],

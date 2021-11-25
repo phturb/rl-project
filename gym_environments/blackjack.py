@@ -6,7 +6,7 @@ BLACKJACK = {
     'input_shape': (3,),
     'seed': 200,
     'success_average' : -110,
-    'load_path' : 'models/blackjack_ddqn_dueling.h5',
+    'model_path' : 'models/blackjack_ddqn_dueling.h5',
     'rewards_path': 'rewards/blackjack_ddqn_dueling.json',
     'plot_path': 'plots/blackjack_ddqn_dueling.png',
     'layers' : [16, 32, 16],

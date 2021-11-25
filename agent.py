@@ -3,15 +3,18 @@
 import gym
 import os
 import json
+import copy
 
 import numpy as np
 import keras.backend as K
 import matplotlib.pyplot as plt
+from functools import partial
 
 from keras.models import Sequential, clone_model, load_model
 from keras.layers import Dense, Lambda, Embedding, Reshape
 from tensorflow.keras.optimizers import Adam
 from collections import deque
+
 
 def create_gym_env(env_name, seed):
     """
@@ -188,7 +191,7 @@ class Agent:
         """
         Test the model
         """
-        total_reward = 0
+        total_reward_array = np.zeros(n_tests)
         for test in range(n_tests):
             steps = 0
             episode_reward = 0
@@ -205,9 +208,9 @@ class Agent:
                 state = next_state
                 if render:
                     self.env.render()
-            total_reward += episode_reward
+            total_reward_array[test] = episode_reward
             print("Test {}\t\tReward: {},\t\tSteps: {}".format(test + 1 ,episode_reward, steps))
-        average = float(total_reward)/float(n_tests)
+        average = float(total_reward_array.sum())/float(n_tests)
         print("Average Success: {} - Experience {}".format(average, {True: "Success", False: "Failed"}[average >= success_average]))    
 
 
@@ -265,17 +268,17 @@ def run_from_config(config, render_tests=False):
     memory = Memory(max_size=memory_config['max_size'])
     policy = PolicyDiscreet(env, policy_config["epsilon"], policy_config['epsilon_decay'], policy_config['epsilon_min'])
     agent = Agent(model, env, memory, warmup_steps=agent_config['warmup_steps'], target_model_update=agent_config['target_model_update'], policy=policy, ddqn=True)
-    if config['load_path'] is not None and os.path.exists(config['load_path']):
-        print("Model is already trained, loading the weights from {}".format(config['load_path']))
-        agent.load(config['load_path'])
+    if config['model_path'] is not None and os.path.exists(config['model_path']):
+        print("Model is already trained, loading the weights from {}".format(config['model_path']))
+        agent.load(config['model_path'])
         policy.epsilon = policy.epsilon_min
         history = []
         with open(config['rewards_path'], "r") as f:
-            train_rewards = json.loads(f)
+            train_rewards = json.load(f)
     else:
         agent.compile()
         history, train_rewards = agent.train(max_steps=train_config['max_steps'], batch_size=train_config['batch_size'], gamma=train_config['gamma'])
-        agent.save(config['load_path'])
+        agent.save(config['model_path'])
     agent.test(n_tests=test_config['n_tests'], render=render_tests)
     with open(config['rewards_path'], "w") as f:
         json.dump(train_rewards, f)

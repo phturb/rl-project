@@ -5,7 +5,7 @@ FROZEN_LAKE = {
     'input_shape': (1,),
     'embedding': [16, 4, (4,)],
     'seed': 200,
-    'load_path' : 'models/frozen_lake_ddqn_dueling.h5',
+    'model_path' : 'models/frozen_lake_ddqn_dueling.h5',
     'rewards_path': 'rewards/frozen_lake_ddqn_dueling.json',
     'plot_path': 'plots/mountain_car_ddqn_dueling.png',
     'layers' : [16, 32, 16],

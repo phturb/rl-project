@@ -5,7 +5,7 @@ MOUNTAIN_CAR = {
     'input_shape': (2,),
     'embedding': None,
     'seed': 200,
-    'load_path' : 'models/mountain_car_ddqn_dueling.h5',
+    'model_path' : 'models/mountain_car_ddqn_dueling.h5',
     'rewards_path': 'rewards/mountain_car_ddqn_dueling.json',
     'plot_path': 'plots/mountain_car_ddqn_dueling.png',
     'layers' : [16, 32, 16],
