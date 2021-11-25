@@ -1,28 +1,31 @@
 
 
 import gym
+import os
 import numpy as np
 
 import keras.backend as K
 import tensorflow as tf
 
-from keras.models import Sequential, clone_model
-from keras.layers import Dense, Lambda
+from keras.models import Sequential, clone_model, load_model
+from keras.layers import Dense, Lambda, Embedding, Reshape
 from tensorflow.keras.optimizers import Adam
 from collections import deque
 
 
-ENV_NAME = ['Taxi-v3', 'CartPole-v1', 'Blackjack-v0', 'Pendulum-v0', 'FrozenLake-8x8-v0']
+ENV_NAME = ['Taxi-v3', 'CartPole-v1', 'Blackjack-v1', 'FrozenLake-v1', 'MountainCar-v0']
 
 
-def create_gym_env(env_name):
+def create_gym_env(env_name, seed):
     """
     Create a gym environment.
     """
     env = gym.make(env_name)
+    env.seed(seed)
+    np.random.seed(seed)
     return env
 
-def create_model(input_shape, output_shape, layers=[32, 64], dueling=False):
+def create_model(input_shape, output_shape, layers=[32, 64], dueling=False, embedding=None):
     """
     Create a model for the self-play game.
     """
@@ -30,9 +33,14 @@ def create_model(input_shape, output_shape, layers=[32, 64], dueling=False):
         raise ValueError("At least one layer is required.")
 
     model = Sequential(name='DQN')
-    model.add(Dense(layers[0], input_shape=input_shape, activation="relu", kernel_initializer='he_uniform', name='Input'))
+    if embedding is not None:
+        model.add(Embedding(embedding[0], embedding[1], input_shape=input_shape, name='Input'))
+        model.add(Reshape(embedding[2]))
+        model.add(Dense(layers[0], activation="relu", name='layer_0'))
+    else:
+        model.add(Dense(layers[0], input_shape=input_shape, activation="relu", name='Input'))
     for i, layer in enumerate(layers[1:]):
-        model.add(Dense(layer, activation="relu", kernel_initializer='he_uniform', name='layer_' + str(i + 1)))
+        model.add(Dense(layer, activation="relu", name='layer_' + str(i + 1)))
     if dueling:
         model.add(Dense(output_shape + 1, activation='linear', name="pre_actions"))
         model.add(Lambda(lambda a: K.expand_dims(a[:, 0], -1) + a[:, 1:] - K.mean(a[:, 1:], axis=1, keepdims=True), output_shape=(output_shape,), name="actions"))
@@ -90,9 +98,8 @@ class Agent:
         """
         self.target_model = clone_model(self.model)
         self.target_model.set_weights(self.model.get_weights())
-        self.target_model.compile(optimizer=Adam(lr=0.001), loss='mse')
-        self.target_model.summary()
-        self.model.compile(optimizer=Adam(lr=0.001), loss='mse')
+        self.target_model.compile(optimizer=Adam(learning_rate=1e-3), loss='mse')
+        self.model.compile(optimizer=Adam(learning_rate=1e-3), loss='mse')
         self.model.summary()
 
     def update_target_model_hard(self):
@@ -167,8 +174,12 @@ class Agent:
                     break
 
             print("Total Steps: {}\t\tEpisode: {}\t\tReward: {},\t\tEpsilon: {},\t\tSteps: {}".format(n_steps, n_episodes ,episode_reward, self.policy.epsilon ,steps))
+        return history
         
     def test(self, n_tests=1, render=False):
+        """
+        Test the model
+        """
         for test in range(n_tests):
             episode_reward = 0
             state = np.array(self.env.reset())
@@ -187,74 +198,201 @@ class Agent:
             print("Test {} reward: {}".format(test + 1 ,episode_reward))        
 
 
+    def save(self, path):
+        self.model.save(path)
+
+    def load(self, path):
+        self.model = load_model(path)
+        self.compile()
+
 def run_from_config(config, render_tests=False):
+    print("Running from config: {}".format(config['env']))
     memory_config = config['memory_config']
     policy_config = config['policy_config']
     agent_config = config['agent_config']
     train_config = config['train_config']
     test_config = config['test_config']
-    env = create_gym_env(config['env'])
-    model = create_model(env.observation_space.shape , env.action_space.n, dueling=True)
+    env = create_gym_env(config['env'], config['seed'])
+    print(env.action_space.n, env.observation_space.n)
+    model = create_model(config['input_shape'] , env.action_space.n, layers=config['layers'], dueling=config['dueling'], embedding=config['embedding'])
     memory = Memory(max_size=memory_config['max_size'])
     policy = PolicyDiscreet(env, policy_config["epsilon"], policy_config['epsilon_decay'], policy_config['epsilon_min'])
     agent = Agent(model, env, memory, warmup_steps=agent_config['warmup_steps'], target_model_update=agent_config['target_model_update'], policy=policy, ddqn=True)
-    agent.compile()
-    agent.train(max_steps=train_config['max_steps'], batch_size=train_config['batch_size'], gamma=train_config['gamma'])
-    agent.test(n_tests=test_config['test_config'], render=render_tests)
+    if config['load_path'] is not None and os.path.exists(config['load_path']):
+        agent.load(config['load_path'])
+        policy.epsilon = policy.epsilon_min
+        history = []
+    else:
+        agent.compile()
+        history = agent.train(max_steps=train_config['max_steps'], batch_size=train_config['batch_size'], gamma=train_config['gamma'])
+    agent.test(n_tests=test_config['n_tests'], render=render_tests)
+    agent.save(config['load_path'])
+    return history, agent
 
 
 configs = {}
 
 configs['CartPole-v1'] = {
     'env': 'CartPole-v1',
+    'embedding': None,
+    'seed': 200,
+    'input_shape': (4,),
+    'load_path' : 'cart_pole_ddqn_dueling.h5',
+    'layers' : [16, 16, 16],
+    'dueling' : True,
     'memory_config': {
         'max_size': 750,
     },
     'policy_config' : {
         'epsilon' : 1,
-        'epsilon_decay' : 0.995,
-        'epsilon_min' : 0.025,
+        'epsilon_decay' : 0.99,
+        'epsilon_min' : 0.01,
     },
     'agent_config': {
-        'warmup_steps': 200,
-        'target_model_update': 4,
+        'warmup_steps': 32,
+        'target_model_update': 5,
     },
     'train_config': {
         'max_steps': 5000,
-        'batch_size': 24,
-        'gamma': 0.995,
+        'batch_size': 32,
+        'gamma': 0.975,
+    },
+    'test_config': {
+        'n_tests': 5,
+    },
+}
+
+run_from_config(configs['CartPole-v1'])
+
+configs['Blackjack-v1'] = {
+    'env': 'Blackjack-v1',
+    'embedding': None,
+    'input_shape': (3,),
+    'seed': 200,
+    'load_path' : 'blackjack_ddqn_dueling.h5',
+    'layers' : [16, 16],
+    'dueling' : True,
+    'memory_config': {
+        'max_size': 1500,
+    },
+    'policy_config' : {
+        'epsilon' : 1,
+        'epsilon_decay' : 0.995,
+        'epsilon_min' : 0.05,
+    },
+    'agent_config': {
+        'warmup_steps': 200,
+        'target_model_update': 5,
+    },
+    'train_config': {
+        'max_steps': 10000,
+        'batch_size': 32,
+        'gamma': 0.975,
     },
     'test_config': {
         'n_tests': 1,
     },
 }
 
-run_from_config(configs['CartPole-v1'])
 
-# WIP
-# configs['Taxi-v3'] = {
-#     'env': 'Taxi-v3',
-#     'memory_config': {
-#         'max_size': 750,
-#     },
-#     'policy_config' : {
-#         'epsilon' : 1,
-#         'epsilon_decay' : 0.99,
-#         'epsilon_min' : 0.05,
-#     },
-#     'agent_config': {
-#         'warmup_steps': 200,
-#         'target_model_update': 4,
-#     },
-#     'train_config': {
-#         'max_steps': 5000,
-#         'batch_size': 32,
-#         'gamma': 0.95,
-#     },
-#     'test_config': {
-#         'n_tests': 1,
-#     },
-# }
+run_from_config(configs['Blackjack-v1'])
+
+configs['MountainCar-v0'] = {
+    'env': 'MountainCar-v0',
+    'input_shape': (2,),
+    'embedding': None,
+    'seed': 200,
+    'load_path' : 'mountain_car_ddqn_dueling.h5',
+    'layers' : [16, 16],
+    'dueling' : True,
+    'memory_config': {
+        'max_size': 1500,
+    },
+    'policy_config' : {
+        'epsilon' : 1,
+        'epsilon_decay' : 0.995,
+        'epsilon_min' : 0.05,
+    },
+    'agent_config': {
+        'warmup_steps': 200,
+        'target_model_update': 5,
+    },
+    'train_config': {
+        'max_steps': 10000,
+        'batch_size': 32,
+        'gamma': 0.975,
+    },
+    'test_config': {
+        'n_tests': 1,
+    },
+}
 
 
-# run_from_config(configs['Taxi-v3'])
+run_from_config(configs['MountainCar-v0'])
+
+configs['Taxi-v3'] = {
+    'env': 'Taxi-v3',
+    'input_shape': (1,),
+    'embedding': [500, 6, (6,)],
+    'seed': 200,
+    'load_path' : 'taxi_ddqn_dueling.h5',
+    'layers' : [16, 16],
+    'dueling' : True,
+    'memory_config': {
+        'max_size': 1500,
+    },
+    'policy_config' : {
+        'epsilon' : 1,
+        'epsilon_decay' : 0.995,
+        'epsilon_min' : 0.05,
+    },
+    'agent_config': {
+        'warmup_steps': 200,
+        'target_model_update': 5,
+    },
+    'train_config': {
+        'max_steps': 10000,
+        'batch_size': 32,
+        'gamma': 0.975,
+    },
+    'test_config': {
+        'n_tests': 1,
+    },
+}
+
+
+run_from_config(configs['Taxi-v3'])
+
+configs['FrozenLake-v1'] = {
+    'env': 'FrozenLake-v1',
+    'input_shape': (1,),
+    'embedding': [16, 4, (4,)],
+    'seed': 200,
+    'load_path' : 'frozen_lake_ddqn_dueling.h5',
+    'layers' : [16, 16],
+    'use_negative_steps_as_reward': True,
+    'dueling' : True,
+    'memory_config': {
+        'max_size': 1500,
+    },
+    'policy_config' : {
+        'epsilon' : 1,
+        'epsilon_decay' : 0.995,
+        'epsilon_min' : 0.05,
+    },
+    'agent_config': {
+        'warmup_steps': 200,
+        'target_model_update': 5,
+    },
+    'train_config': {
+        'max_steps': 10000,
+        'batch_size': 32,
+        'gamma': 0.975,
+    },
+    'test_config': {
+        'n_tests': 1,
+    },
+}
+
+
+run_from_config(configs['FrozenLake-v1'])
