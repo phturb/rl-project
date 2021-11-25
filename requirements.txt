@@ -1,5 +1,3 @@
-sklearn
-pandas
 tqdm
 keras
 tensorflow
