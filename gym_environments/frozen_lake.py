@@ -6,6 +6,8 @@ FROZEN_LAKE = {
     'embedding': [16, 4, (4,)],
     'seed': 200,
     'load_path' : 'models/frozen_lake_ddqn_dueling.h5',
+    'rewards_path': 'rewards/frozen_lake_ddqn_dueling.json',
+    'plot_path': 'plots/mountain_car_ddqn_dueling.png',
     'layers' : [16, 32, 16],
     'dueling' : True,
     'success_average' : 0.9,

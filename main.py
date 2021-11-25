@@ -1,5 +1,5 @@
 
-from agent import run_from_config
+from agent import plot_rewards, run_from_config
 import keras.backend as K
 from gym_environments.blackjack import BLACKJACK, BLACKJACK_ENV
 from gym_environments.cartpole import CARTPOLE, CARTPOLE_ENV
@@ -21,12 +21,17 @@ configs[FROZEN_LAKE_ENV] = FROZEN_LAKE
 
 if __name__ == "__main__":
 
-    run_from_config(configs[CARTPOLE_ENV])
+    _, cartpole_reward, _ = run_from_config(configs[CARTPOLE_ENV])
+    plot_rewards(cartpole_reward, CARTPOLE_ENV, configs[CARTPOLE_ENV]['plot_path'])
 
-    run_from_config(configs[BLACKJACK_ENV])
+    _, blackjack_reward, _ = run_from_config(configs[BLACKJACK_ENV])
+    plot_rewards(blackjack_reward, BLACKJACK_ENV, configs[BLACKJACK_ENV]['plot_path'])
 
-    run_from_config(configs[MOUNTAIN_CAR_ENV])
+    _, mountain_car_reward, _ = run_from_config(configs[MOUNTAIN_CAR_ENV])
+    plot_rewards(mountain_car_reward, MOUNTAIN_CAR_ENV, configs[MOUNTAIN_CAR_ENV]['plot_path'])
 
-    run_from_config(configs[TAXI_ENV])
+    _, taxi_reward, _ = run_from_config(configs[TAXI_ENV])
+    plot_rewards(taxi_reward, TAXI_ENV, configs[TAXI_ENV]['plot_path'])
 
-    run_from_config(configs[FROZEN_LAKE_ENV])
+    _, frozen_lake_reward, _ = run_from_config(configs[FROZEN_LAKE_ENV])
+    plot_rewards(frozen_lake_reward, FROZEN_LAKE_ENV, configs[FROZEN_LAKE_ENV]['plot_path'])

@@ -2,19 +2,16 @@
 
 import gym
 import os
-import numpy as np
+import json
 
+import numpy as np
 import keras.backend as K
-# import tensorflow as tf
+import matplotlib.pyplot as plt
 
 from keras.models import Sequential, clone_model, load_model
 from keras.layers import Dense, Lambda, Embedding, Reshape
 from tensorflow.keras.optimizers import Adam
 from collections import deque
-
-
-ENV_NAME = ['Taxi-v3', 'CartPole-v1', 'Blackjack-v1', 'FrozenLake-v1', 'MountainCar-v0']
-
 
 def create_gym_env(env_name, seed):
     """
@@ -59,6 +56,9 @@ class PolicyDiscreet:
         self.epsilon_min = epsilon_min
 
     def __call__(self, model, state, training=False, warmup=False):
+        """
+        Return the action for the given state from a model.
+        """
 
         if not warmup:
             self.epsilon = max(self.epsilon_min, self.epsilon * self.espilon_decay)
@@ -72,9 +72,15 @@ class Memory:
         self.buffer = deque(maxlen=max_size)
 
     def add(self, experience):
+        """
+        Add experience to the memory.
+        """
         self.buffer.append(experience)
 
     def sample(self, batch_size):
+        """
+        Return a random sample of the memory of the size of batch_size.
+        """
         indexes = np.random.choice(np.arange(len(self.buffer)), size=batch_size, replace=False)
         return [self.buffer[i] for i in indexes]
 
@@ -145,6 +151,7 @@ class Agent:
         """
         n_steps = 0
         n_episodes = 0
+        episodes_rewards = []
         history = []
         while(n_steps <= max_steps + self.warmup_steps):
             n_episodes += 1
@@ -172,9 +179,10 @@ class Agent:
                     self.env.render()
                 if n_steps > max_steps + self.warmup_steps:
                     break
-
+            episodes_rewards.append(episode_reward)
             print("Total Steps: {}\t\tEpisode: {}\t\tReward: {},\t\tEpsilon: {},\t\tSteps: {}".format(n_steps, n_episodes ,episode_reward, self.policy.epsilon ,steps))
-        return history
+        episodes_rewards.pop()
+        return history, episodes_rewards
         
     def test(self, n_tests=1, success_average=1, render=False):
         """
@@ -204,13 +212,48 @@ class Agent:
 
 
     def save(self, path):
+        """
+        Save the online model
+        """
         self.model.save(path)
 
     def load(self, path):
+        """
+        Load the model and compile both models
+        """
         self.model = load_model(path)
         self.compile()
 
+
+def plot_rewards(rewards, name, path):
+    """
+    Plot the rewards
+    """
+    plt.plot(rewards)
+    plt.title(name)
+    plt.xlabel("Episode")
+    plt.ylabel("Reward")
+    plt.savefig(path)
+    plt.close()
+
+def plot_compare_rewards(rewards_list,labels_list, name, path):
+    """
+    Plot the comparaison rewards
+    """
+    for rewards in rewards_list:
+        plt.plot(rewards)
+    plt.legend(labels_list)
+    plt.title(name)
+    plt.xlabel("Episode")
+    plt.ylabel("Reward")
+    plt.savefig(path)
+    plt.close()
+
 def run_from_config(config, render_tests=False):
+    """
+    Run the agent from a config file.
+    """
+
     print("Running from config: {}".format(config['env']))
     memory_config = config['memory_config']
     policy_config = config['policy_config']
@@ -223,12 +266,17 @@ def run_from_config(config, render_tests=False):
     policy = PolicyDiscreet(env, policy_config["epsilon"], policy_config['epsilon_decay'], policy_config['epsilon_min'])
     agent = Agent(model, env, memory, warmup_steps=agent_config['warmup_steps'], target_model_update=agent_config['target_model_update'], policy=policy, ddqn=True)
     if config['load_path'] is not None and os.path.exists(config['load_path']):
+        print("Model is already trained, loading the weights from {}".format(config['load_path']))
         agent.load(config['load_path'])
         policy.epsilon = policy.epsilon_min
         history = []
+        with open(config['rewards_path'], "r") as f:
+            train_rewards = json.loads(f)
     else:
         agent.compile()
-        history = agent.train(max_steps=train_config['max_steps'], batch_size=train_config['batch_size'], gamma=train_config['gamma'])
+        history, train_rewards = agent.train(max_steps=train_config['max_steps'], batch_size=train_config['batch_size'], gamma=train_config['gamma'])
+        agent.save(config['load_path'])
     agent.test(n_tests=test_config['n_tests'], render=render_tests)
-    agent.save(config['load_path'])
-    return history, agent
+    with open(config['rewards_path'], "w") as f:
+        json.dump(train_rewards, f)
+    return history, train_rewards, agent

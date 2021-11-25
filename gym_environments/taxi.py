@@ -6,6 +6,8 @@ TAXI = {
     'embedding': [500, 6, (6,)],
     'seed': 200,
     'load_path' : 'models/taxi_ddqn_dueling.h5',
+    'rewards_path': 'rewards/taxi_ddqn_dueling.json',
+    'plot_path': 'plots/taxi_ddqn_dueling.png',
     'layers' : [16, 16, 16],
     'dueling' : True,
     'success_average' : 0, # TODO
