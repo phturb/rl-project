@@ -12,19 +12,19 @@ MOUNTAIN_CAR = {
     'dueling' : True,
     'success_average' : -110,
     'memory_config': {
-        'max_size': 10000,
+        'max_size': 12000,
     },
     'policy_config' : {
         'epsilon' : 1,
-        'epsilon_decay' : 0.9999,
+        'epsilon_decay' : 0.99992,
         'epsilon_min' : 0.01,
     },
     'agent_config': {
-        'warmup_steps': 500,
-        'target_model_update': 5,
+        'warmup_steps': 1000,
+        'target_model_update': 10,
     },
     'train_config': {
-        'max_steps': 100000,
+        'max_steps': 200000,
         'batch_size': 32,
         'gamma': 0.9,
     },

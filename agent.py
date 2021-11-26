@@ -73,18 +73,21 @@ class PolicyDiscreet:
 class Memory:
     def __init__(self, max_size=1000):
         self.buffer = deque(maxlen=max_size)
+        self.maxlen = max_size
+        self.len = 0
 
     def add(self, experience):
         """
         Add experience to the memory.
         """
+        self.len = min(self.len + 1, self.maxlen)
         self.buffer.append(experience)
 
     def sample(self, batch_size):
         """
         Return a random sample of the memory of the size of batch_size.
         """
-        indexes = np.random.choice(np.arange(len(self.buffer)), size=batch_size, replace=False)
+        indexes = np.random.choice(np.arange(self.len), size=batch_size, replace=False)
         return [self.buffer[i] for i in indexes]
 
 class Agent:
@@ -127,19 +130,17 @@ class Agent:
         actions = np.array(actions)
         rewards = np.array(rewards)
         next_states = np.array(next_states)
-        dones = np.array(dones)
+        dones = 1 - np.array(dones)
 
         # Calculate the target
         targets = self.model.predict(states)
         if self.ddqn:
-            Q_sa = self.target_model.predict(next_states)
+            Q_sa = np.max(self.target_model.predict(next_states), axis=1)
         else:
-            Q_sa = self.model.predict(next_states)
+            Q_sa = np.max(self.model.predict(next_states), axis=1)
+        adjusted_rewards = rewards + dones * gamma * Q_sa
         for i in range(batch_size):
-            if dones[i]:
-                targets[i][actions[i]] = rewards[i]
-            else:
-                targets[i][actions[i]] = rewards[i] + gamma * np.max(Q_sa[i])
+            targets[i][actions[i]] = adjusted_rewards[i]
 
         hist = self.model.fit(states, targets, epochs=1, verbose=0)
 
@@ -283,3 +284,25 @@ def run_from_config(config, render_tests=False):
     with open(config['rewards_path'], "w") as f:
         json.dump(train_rewards, f)
     return history, train_rewards, agent
+
+def render_from_config(config):
+    """
+    Run the agent from a config file.
+    """
+    print("Running from config: {}".format(config['env']))
+    memory_config = config['memory_config']
+    policy_config = config['policy_config']
+    agent_config = config['agent_config']
+    env = create_gym_env(config['env'], config['seed'])
+    model = create_model(config['input_shape'] , env.action_space.n, layers=config['layers'], dueling=config['dueling'], embedding=config['embedding'])
+    memory = Memory(max_size=memory_config['max_size'])
+    policy = PolicyDiscreet(env, policy_config["epsilon"], policy_config['epsilon_decay'], policy_config['epsilon_min'])
+    policy.epsilon = policy.epsilon_min
+    agent = Agent(model, env, memory, warmup_steps=agent_config['warmup_steps'], target_model_update=agent_config['target_model_update'], policy=policy, ddqn=True)
+    if config['model_path'] is not None and os.path.exists(config['model_path']):
+        print("Model is already trained, loading the weights from {}".format(config['model_path']))
+        agent.load(config['model_path'])
+    else:
+        raise Exception("Model not found")
+    agent.test(n_tests=1, render=True)
+    return
