@@ -7,10 +7,10 @@ FROZEN_LAKE = {
     'seed': 200,
     'model_path' : 'models/frozen_lake_ddqn_dueling.h5',
     'rewards_path': 'rewards/frozen_lake_ddqn_dueling.json',
-    'plot_path': 'plots/mountain_car_ddqn_dueling.png',
+    'plot_path': 'plots/frozen_lake_ddqn_dueling.png',
     'layers' : [16, 32, 16],
     'dueling' : True,
-    'success_average' : 0.9,
+    'success_average' : 0.7,
     'memory_config': {
         'max_size': 5000,
     },

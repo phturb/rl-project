@@ -10,7 +10,7 @@ TAXI = {
     'plot_path': 'plots/taxi_ddqn_dueling.png',
     'layers' : [16, 32, 16],
     'dueling' : True,
-    'success_average' : 9, # TODO
+    'success_average' : 8,
     'memory_config': {
         'max_size': 40000,
     },

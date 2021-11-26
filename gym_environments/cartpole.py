@@ -2,9 +2,9 @@ CARTPOLE_ENV = 'CartPole-v1'
 
 CARTPOLE = {
     'env': CARTPOLE_ENV,
+    'input_shape': (4,),
     'embedding': None,
     'seed': 200,
-    'input_shape': (4,),
     'model_path' : 'models/cart_pole_ddqn_dueling.h5',
     'rewards_path': 'rewards/cart_pole_ddqn_dueling.json',
     'plot_path': 'plots/cart_pole_ddqn_dueling.png',
