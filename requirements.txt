@@ -2,3 +2,5 @@ tqdm
 keras
 tensorflow
 matplotlib
+seaborn
+pandas

@@ -1,37 +1,50 @@
 
-from agent import plot_rewards, render_from_config, run_from_config
+from agent import plot_compare_rewards,plot_avg_rewards, run_from_config
 import keras.backend as K
-from gym_environments.blackjack import BLACKJACK, BLACKJACK_ENV
-from gym_environments.cartpole import CARTPOLE, CARTPOLE_ENV
-from gym_environments.frozen_lake import FROZEN_LAKE, FROZEN_LAKE_ENV
-from gym_environments.mountain_car import MOUNTAIN_CAR, MOUNTAIN_CAR_ENV
-from gym_environments.taxi import TAXI, TAXI_ENV
-
-configs = {}
-
-configs[CARTPOLE_ENV] = CARTPOLE
-
-configs[BLACKJACK_ENV] = BLACKJACK
-
-configs[MOUNTAIN_CAR_ENV] = MOUNTAIN_CAR
-
-configs[TAXI_ENV] = TAXI
-
-configs[FROZEN_LAKE_ENV] = FROZEN_LAKE
+from gym_environments.blackjack import BLACKJACK, BLACKJACK_NO_DUELLING
+from gym_environments.cartpole import CARTPOLE, CARTPOLE_NO_DUELLING
+from gym_environments.frozen_lake import FROZEN_LAKE, FROZEN_LAKE_NO_DUELLING
+from gym_environments.mountain_car import MOUNTAIN_CAR, MOUNTAIN_CAR_NO_DUELLING
+from gym_environments.taxi import TAXI, TAXI_NO_DUELLING
 
 if __name__ == "__main__":
 
-    # _, cartpole_reward, _ = run_from_config(configs[CARTPOLE_ENV])
-    # plot_rewards(cartpole_reward, CARTPOLE_ENV, configs[CARTPOLE_ENV]['plot_path'])
+    _, blackjack_reward, _ = run_from_config(BLACKJACK)
+    plot_avg_rewards(blackjack_reward, BLACKJACK)
 
-    # _, blackjack_reward, _ = run_from_config(configs[BLACKJACK_ENV])
-    # plot_rewards(blackjack_reward, BLACKJACK_ENV, configs[BLACKJACK_ENV]['plot_path'])
+    _, blackjack_no_duelling_reward, _ = run_from_config(BLACKJACK_NO_DUELLING)
+    plot_avg_rewards(blackjack_no_duelling_reward,BLACKJACK_NO_DUELLING)
 
-    _, mountain_car_reward, _ = run_from_config(configs[MOUNTAIN_CAR_ENV])
-    plot_rewards(mountain_car_reward, MOUNTAIN_CAR_ENV, configs[MOUNTAIN_CAR_ENV]['plot_path'])
+    plot_compare_rewards([blackjack_reward, blackjack_no_duelling_reward], [BLACKJACK, BLACKJACK_NO_DUELLING], "./plots/blackjack_compare.png")
 
-    # _, taxi_reward, _ = run_from_config(configs[TAXI_ENV])
-    # plot_rewards(taxi_reward, TAXI_ENV, configs[TAXI_ENV]['plot_path'])
+    _, cartpole_reward, _ = run_from_config(CARTPOLE)
+    plot_avg_rewards(cartpole_reward, CARTPOLE)
 
-    # _, frozen_lake_reward, _ = run_from_config(configs[FROZEN_LAKE_ENV])
-    # plot_rewards(frozen_lake_reward, FROZEN_LAKE_ENV, configs[FROZEN_LAKE_ENV]['plot_path'])
+    _, cartpole_no_duelling_reward, _ = run_from_config(CARTPOLE_NO_DUELLING)
+    plot_avg_rewards(cartpole_no_duelling_reward, CARTPOLE_NO_DUELLING)
+
+    plot_compare_rewards([cartpole_reward, cartpole_no_duelling_reward], [CARTPOLE, CARTPOLE_NO_DUELLING], "./plots/cartpole_compare.png")
+
+    _, mountain_car_reward, _ = run_from_config(MOUNTAIN_CAR)
+    plot_avg_rewards(mountain_car_reward, MOUNTAIN_CAR)
+
+    _, mountain_car_no_duelling_reward, _ = run_from_config(MOUNTAIN_CAR_NO_DUELLING)
+    plot_avg_rewards(mountain_car_no_duelling_reward, MOUNTAIN_CAR_NO_DUELLING)
+
+    plot_compare_rewards([mountain_car_reward, mountain_car_no_duelling_reward], [MOUNTAIN_CAR, MOUNTAIN_CAR_NO_DUELLING], "./plots/mountain_car_compare.png")
+
+    _, taxi_reward, _ = run_from_config(TAXI)
+    plot_avg_rewards(taxi_reward, TAXI)
+
+    _, taxi_no_duelling_reward, _ = run_from_config(TAXI_NO_DUELLING)
+    plot_avg_rewards(taxi_no_duelling_reward, TAXI_NO_DUELLING)
+
+    plot_compare_rewards([taxi_reward, taxi_no_duelling_reward], [TAXI, TAXI_NO_DUELLING], "./plots/taxi_compare.png")
+
+    _, frozen_lake_reward, _ = run_from_config(FROZEN_LAKE)
+    plot_avg_rewards(frozen_lake_reward, FROZEN_LAKE)
+
+    _, frozen_lake_no_duelling_reward, _ = run_from_config(FROZEN_LAKE_NO_DUELLING)
+    plot_avg_rewards(frozen_lake_no_duelling_reward, FROZEN_LAKE_NO_DUELLING)
+
+    plot_compare_rewards([frozen_lake_reward, frozen_lake_no_duelling_reward], [FROZEN_LAKE, FROZEN_LAKE_NO_DUELLING], "./plots/frozen_lake_compare.png")

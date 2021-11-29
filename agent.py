@@ -4,10 +4,13 @@ import gym
 import os
 import json
 import copy
+import itertools
 
 import numpy as np
 import keras.backend as K
 import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 from functools import partial
 
 from keras.models import Sequential, clone_model, load_model
@@ -42,7 +45,7 @@ def create_model(input_shape, output_shape, layers=[32, 64], dueling=False, embe
     for i, layer in enumerate(layers[1:]):
         model.add(Dense(layer, activation="relu", name='layer_' + str(i + 1)))
     if dueling:
-        model.add(Dense(output_shape + 1, activation='linear', name="pre_actions"))
+        model.add(Dense(output_shape + 1, activation='linear', name="duelling_avg"))
         model.add(Lambda(lambda a: K.expand_dims(a[:, 0], -1) + a[:, 1:] - K.mean(a[:, 1:], axis=1, keepdims=True), output_shape=(output_shape,), name="actions"))
     else:
         model.add(Dense(output_shape, activation='linear', name="actions"))
@@ -240,14 +243,52 @@ def plot_rewards(rewards, name, path):
     plt.savefig(path)
     plt.close()
 
-def plot_compare_rewards(rewards_list,labels_list, name, path):
+def get_updated_reward_from_config(rewards, config):
+    if config['avg_plot']:
+        plot_reward = []
+        w = config['avg_window_plot']
+        w_2 =  w // 2
+        for i in range(len(rewards)):
+            s = max(0, i - w_2)
+            e = min(len(rewards), i + w_2)
+            plot_reward.append(sum(rewards[s:e]) / (e - s + 1))
+        return plot_reward
+    else:
+        return rewards
+
+def plot_avg_rewards(rewards, config):
+    """
+    Plot the rewards
+    """
+
+
+    # cluster = []
+    # for i in range(len(rewards)):
+    #     cluster.append(i % config['avg_window_plot'])
+
+    # r = pd.DataFrame(list(zip(cluster, rewards)), columns=['Episode', 'Reward'])
+    # sns.lineplot(x="Episode", y="Reward", data=r , ci='sd')
+    plot_rewards = get_updated_reward_from_config(rewards, config)
+    plt.plot(plot_rewards)
+    plt.title(config['env'])
+    plt.xlabel("Episode")
+    plt.ylabel("Reward")
+    plt.savefig(config['plot_path'])
+    plt.close()
+
+
+def plot_compare_rewards(rewards_list,config_list, path):
     """
     Plot the comparaison rewards
     """
-    for rewards in rewards_list:
-        plt.plot(rewards)
-    plt.legend(labels_list)
-    plt.title(name)
+    labels = []
+    for rewards, config in zip(rewards_list, config_list):
+        plot_rewards = get_updated_reward_from_config(rewards, config)
+        labels.append(config['name'])
+        plt.plot(plot_rewards)
+    title = " ".join(labels)
+    plt.legend(labels)
+    plt.title(title)
     plt.xlabel("Episode")
     plt.ylabel("Reward")
     plt.savefig(path)
@@ -259,6 +300,7 @@ def run_from_config(config, render_tests=False):
     """
 
     print("Running from config: {}".format(config['env']))
+    np.random.seed(config['seed'])
     memory_config = config['memory_config']
     policy_config = config['policy_config']
     agent_config = config['agent_config']
