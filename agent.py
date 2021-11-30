@@ -123,7 +123,7 @@ class Agent:
         """
         self.target_model.set_weights(self.model.get_weights())
 
-    def backward(self, batch_size, gamma, n_steps):
+    def backward(self, batch_size, gamma, n_steps, weights_path):
         """
         Backward pass.
         """
@@ -149,10 +149,12 @@ class Agent:
 
         if self.ddqn and n_steps % self.target_model_update == 0:
             self.update_target_model_hard()
+            if weights_path is not None:
+                self.save_weights(weights_path)
 
         return hist
 
-    def train(self, max_steps=10000, batch_size=32, gamma=0.95, render=False):
+    def train(self, max_steps=10000, batch_size=32, gamma=0.95, render=False, weights_path=None):
         """
         Train the model.
         """
@@ -179,7 +181,7 @@ class Agent:
                 self.memory.add((state, action, reward, next_state, done))
 
                 if self.warmup_steps < n_steps:
-                    history.append(self.backward(batch_size, gamma, n_steps))
+                    history.append(self.backward(batch_size, gamma, n_steps, weights_path))
 
                 state = next_state
                 if render:
@@ -224,11 +226,24 @@ class Agent:
         """
         self.model.save(path)
 
+    def save_weights(self, path):
+        """
+        Save the online model weights
+        """
+        self.model.save_weights(path)
+
     def load(self, path):
         """
         Load the model and compile both models
         """
         self.model = load_model(path)
+        self.compile()
+
+    def load_weights(self, path):
+        """
+        Load the weights of the online model
+        """
+        self.model.load_weights(path)
         self.compile()
 
 
@@ -319,12 +334,14 @@ def run_from_config(config, render_tests=False):
         with open(config['rewards_path'], "r") as f:
             train_rewards = json.load(f)
     else:
-        agent.compile()
-        history, train_rewards = agent.train(max_steps=train_config['max_steps'], batch_size=train_config['batch_size'], gamma=train_config['gamma'])
+        if config['weights_path'] is not None and os.path.exists(config['weights_path']):
+            agent.load_weights(config['weights_path'])
+        history, train_rewards = agent.train(max_steps=train_config['max_steps'], batch_size=train_config['batch_size'], gamma=train_config['gamma'], weights_path=config['weights_path'])
         agent.save(config['model_path'])
+        with open(config['rewards_path'], "w") as f:
+            json.dump(train_rewards, f)
     agent.test(n_tests=test_config['n_tests'], render=render_tests)
-    with open(config['rewards_path'], "w") as f:
-        json.dump(train_rewards, f)
+
     return history, train_rewards, agent
 
 def render_from_config(config):
