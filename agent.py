@@ -14,21 +14,26 @@ import pandas as pd
 from functools import partial
 
 from keras.models import Sequential, clone_model, load_model
-from keras.layers import Dense, Lambda, Embedding, Reshape
+from keras.layers import Dense, Lambda, Embedding, Reshape, Conv2D, Flatten
 from tensorflow.keras.optimizers import Adam
 from collections import deque
+from minatar import Environment
 
 
 def create_gym_env(env_name, seed):
     """
     Create a gym environment.
     """
-    env = gym.make(env_name)
-    env.seed(seed)
+    if env_name.startswith("minatar"):
+        env_name = env_name.replace("minatar-", "")
+        env = Environment(env_name)
+    else:
+        env = gym.make(env_name)
+        env.seed(seed)
     np.random.seed(seed)
     return env
 
-def create_model(input_shape, output_shape, layers=[32, 64], dueling=False, embedding=None):
+def create_model(input_shape, output_shape, layers=[32, 64], dueling=False, embedding=None, minatar=False):
     """
     Create a model for the self-play game.
     """
@@ -36,7 +41,11 @@ def create_model(input_shape, output_shape, layers=[32, 64], dueling=False, embe
         raise ValueError("At least one layer is required.")
 
     model = Sequential(name='DQN')
-    if embedding is not None:
+
+    if minatar:
+        model.add(Conv2D(16, 3, strides=1, activation='relu', input_shape=input_shape, name='Input'))
+        model.add(Flatten())
+    elif embedding is not None:
         model.add(Embedding(embedding[0], embedding[1], input_shape=input_shape, name='Input'))
         model.add(Reshape(embedding[2]))
         model.add(Dense(layers[0], activation="relu", name='layer_0'))
@@ -55,8 +64,8 @@ class PolicyDiscreet:
     """
     Epsilon greedy policy for a deiscrete action
     """
-    def __init__(self, env, epsilon, espilon_decay, epsilon_min):
-        self.env = env
+    def __init__(self, actions, epsilon, espilon_decay, epsilon_min):
+        self.actions = actions
         self.epsilon = epsilon
         self.espilon_decay = espilon_decay
         self.epsilon_min = epsilon_min
@@ -69,9 +78,9 @@ class PolicyDiscreet:
         if not warmup:
             self.epsilon = max(self.epsilon_min, self.epsilon * self.espilon_decay)
         if warmup or (training and (np.random.rand() <= self.epsilon)):
-            return self.env.action_space.sample()
+            return np.random.choice(self.actions)
         else:
-            return np.argmax(model.predict(state.reshape(1, -1)))
+            return np.argmax(model.predict(np.expand_dims(state, axis=0)))
 
 class Memory:
     def __init__(self, max_size=1000):
@@ -106,6 +115,7 @@ class Agent:
         self.target_model_update = target_model_update
         self.policy = policy
         self.ddqn = ddqn
+        self.minatar = isinstance(env, Environment)
 
     def compile(self):
         """
@@ -166,7 +176,11 @@ class Agent:
             n_episodes += 1
             episode_reward = 0
             steps = 0
-            state = np.array(self.env.reset())
+            if self.minatar:
+                self.env.reset()
+                state = np.array(self.env.state()).astype(np.int32)
+            else:
+                state = np.array(self.env.reset())
             done = False
             if render:
                 self.env.render()
@@ -174,8 +188,13 @@ class Agent:
                 n_steps += 1
                 steps += 1
                 action = self.policy(self.model, state, training=True, warmup=(n_steps <= self.warmup_steps))
-                next_state, reward, done, _ = self.env.step(action)
-                next_state = np.array(next_state)
+                if self.minatar:
+                    reward, done = self.env.act(action)
+                    next_state = self.env.state()
+                    next_state = np.array(next_state).astype(np.int32)
+                else:
+                    next_state, reward, done, _ = self.env.step(action)
+                    next_state = np.array(next_state)
                 episode_reward += reward
                 # Add to memory the experience
                 self.memory.add((state, action, reward, next_state, done))
@@ -201,14 +220,22 @@ class Agent:
         for test in range(n_tests):
             steps = 0
             episode_reward = 0
-            state = np.array(self.env.reset())
+            if self.minatar:
+                self.env.reset()
+                state = np.array(self.env.state())
+            else:
+                state = np.array(self.env.reset())
             done = False
             if render:
                 self.env.render()
             while(not done):
                 steps+=1
                 action = self.policy(self.model, state, training=False, warmup=False)
-                next_state, reward, done, _ = self.env.step(action)
+                if self.minatar:
+                    reward, done = self.env.act(action)
+                    next_state = self.env.state()
+                else:
+                    next_state, reward, done, _ = self.env.step(action)
                 next_state = np.array(next_state)
                 episode_reward += reward
                 state = next_state
@@ -322,9 +349,13 @@ def run_from_config(config, render_tests=False):
     train_config = config['train_config']
     test_config = config['test_config']
     env = create_gym_env(config['env'], config['seed'])
-    model = create_model(config['input_shape'] , env.action_space.n, layers=config['layers'], dueling=config['dueling'], embedding=config['embedding'])
+    if "action_space" in config:
+        n = config['action_space']
+    else:
+        n = env.action_space.n
+    model = create_model(config['input_shape'] , n, layers=config['layers'], dueling=config['dueling'], embedding=config['embedding'], minatar=config['env'].startswith('minatar'))
     memory = Memory(max_size=memory_config['max_size'])
-    policy = PolicyDiscreet(env, policy_config["epsilon"], policy_config['epsilon_decay'], policy_config['epsilon_min'])
+    policy = PolicyDiscreet(n, policy_config["epsilon"], policy_config['epsilon_decay'], policy_config['epsilon_min'])
     agent = Agent(model, env, memory, warmup_steps=agent_config['warmup_steps'], target_model_update=agent_config['target_model_update'], policy=policy, ddqn=True)
     if config['model_path'] is not None and os.path.exists(config['model_path']):
         print("Model is already trained, loading the weights from {}".format(config['model_path']))
@@ -355,9 +386,13 @@ def render_from_config(config):
     policy_config = config['policy_config']
     agent_config = config['agent_config']
     env = create_gym_env(config['env'], config['seed'])
-    model = create_model(config['input_shape'] , env.action_space.n, layers=config['layers'], dueling=config['dueling'], embedding=config['embedding'])
+    if "action_space" in config:
+        n = config['action_space']
+    else:
+        n = env.action_space.n
+    model = create_model(config['input_shape'] , n, layers=config['layers'], dueling=config['dueling'], embedding=config['embedding'], minatar=config['env'].startswith('minatar'))
     memory = Memory(max_size=memory_config['max_size'])
-    policy = PolicyDiscreet(env, policy_config["epsilon"], policy_config['epsilon_decay'], policy_config['epsilon_min'])
+    policy = PolicyDiscreet(n, policy_config["epsilon"], policy_config['epsilon_decay'], policy_config['epsilon_min'])
     policy.epsilon = policy.epsilon_min
     agent = Agent(model, env, memory, warmup_steps=agent_config['warmup_steps'], target_model_update=agent_config['target_model_update'], policy=policy, ddqn=True)
     if config['model_path'] is not None and os.path.exists(config['model_path']):
