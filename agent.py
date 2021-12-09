@@ -336,6 +336,8 @@ def run_from_config(config, render_tests=False):
     else:
         if config['weight_path'] is not None and os.path.exists(config['weight_path']):
             agent.load_weights(config['weight_path'])
+        else:
+            agent.compile()
         history, train_rewards = agent.train(max_steps=train_config['max_steps'], batch_size=train_config['batch_size'], gamma=train_config['gamma'], weights_path=config['weight_path'])
         agent.save(config['model_path'])
         with open(config['rewards_path'], "w") as f:
