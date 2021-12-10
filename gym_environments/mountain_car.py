@@ -57,7 +57,7 @@ MOUNTAIN_CAR_NO_DUELLING = {
     },
     'policy_config' : {
         'epsilon' : 0.99,
-        'epsilon_decay' : 0.9
+        'epsilon_decay' : 0.9,
         'epsilon_min' : 0.05,
     },
     'agent_config': {
