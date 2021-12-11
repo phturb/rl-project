@@ -20,9 +20,9 @@ MOUNTAIN_CAR = {
         'max_size': 50000,
     },
     'policy_config' : {
-        'epsilon' : 1,
-        'epsilon_decay' : 0.99995,
-        'epsilon_min' : 0.01,
+        'epsilon' : 0.99,
+        'epsilon_decay' : 0.9,
+        'epsilon_min' : 0.05,
     },
     'agent_config': {
         'warmup_steps': 10000,
@@ -31,7 +31,7 @@ MOUNTAIN_CAR = {
     'train_config': {
         'max_steps': 200000,
         'batch_size': 32,
-        'gamma': 0.9,
+        'gamma': 0.95,
     },
     'test_config': {
         'n_tests': 1,
@@ -58,9 +58,9 @@ MOUNTAIN_CAR_NO_DUELLING = {
         'max_size': 50000,
     },
     'policy_config' : {
-        'epsilon' : 1,
-        'epsilon_decay' : 0.99995,
-        'epsilon_min' : 0.01,
+        'epsilon' : 0.99,
+        'epsilon_decay' : 0.9,
+        'epsilon_min' : 0.05,
     },
     'agent_config': {
         'warmup_steps': 10000,
@@ -69,7 +69,7 @@ MOUNTAIN_CAR_NO_DUELLING = {
     'train_config': {
         'max_steps': 200000,
         'batch_size': 32,
-        'gamma': 0.9,
+        'gamma': 0.95,
     },
     'test_config': {
         'n_tests': 1,
