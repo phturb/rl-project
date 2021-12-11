@@ -34,7 +34,7 @@ CARTPOLE = {
         'gamma': 0.975,
     },
     'test_config': {
-        'n_tests': 100,
+        'n_tests': 1,
     },
 }
 
@@ -72,6 +72,6 @@ CARTPOLE_NO_DUELLING = {
         'gamma': 0.975,
     },
     'test_config': {
-        'n_tests': 100,
+        'n_tests': 1,
     },
 }

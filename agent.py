@@ -264,7 +264,7 @@ class Agent:
                 if n_steps > max_steps + self.warmup_steps:
                     break
             episodes_rewards.append(episode_reward)
-            episodes_steps.append(steps)
+            episodes_steps.append(n_steps)
 
             if checkpoint_path is not None and n_steps - previous_step_save >= 1000:
                 previous_step_save = n_steps
@@ -389,7 +389,7 @@ def plot_avg_rewards(results, config):
     # r = pd.DataFrame(list(zip(cluster, rewards)), columns=['Episode', 'Reward'])
     # sns.lineplot(x="Episode", y="Reward", data=r , ci='sd')
     plot_rewards = get_updated_reward_from_config(results["train_rewards"], config)
-    plt.plot(results["train_episodes"], plot_rewards)
+    plt.plot(results["train_steps"], plot_rewards)
     plt.title(config['name'])
     plt.xlabel("Steps")
     plt.ylabel("Reward")
@@ -405,7 +405,7 @@ def plot_compare_rewards(rewards_list, config_list, path):
     for results, config in zip(rewards_list, config_list):
         plot_rewards = get_updated_reward_from_config(results["train_rewards"], config)
         labels.append(config['name'])
-        plt.plot(results["train_episodes"], plot_rewards)
+        plt.plot(results["train_steps"], plot_rewards)
     title = " ".join(labels)
     plt.legend(labels)
     plt.title("Compare " + title)
@@ -452,12 +452,12 @@ def run_from_config(config, render_tests=False):
             agent.load_weights(config['weight_path'])
         else:
             agent.compile()
-        history, train_rewards, trains_steps = agent.train(max_steps=train_config['max_steps'], batch_size=train_config['batch_size'],
+        history, train_rewards, train_steps = agent.train(max_steps=train_config['max_steps'], batch_size=train_config['batch_size'],
                                              gamma=train_config['gamma'], weights_path=config['weight_path'], checkpoint_path=config['checkpoint_path'])
-        trains_results = {"train_rewards":train_rewards,"trains_steps":trains_steps}
+        trains_results = {"train_rewards":train_rewards,"train_steps":train_steps}
         agent.save(config['model_path'])
         with open(config['rewards_path'], "w") as f:
-            json.dump({"train_rewards":train_rewards,"trains_steps":trains_steps}, f)
+            json.dump({"train_rewards":train_rewards,"train_steps":train_steps}, f)
     agent.test(n_tests=test_config['n_tests'], render=render_tests)
 
     return history, trains_results, agent
