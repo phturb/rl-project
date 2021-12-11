@@ -4,4 +4,5 @@ tensorflow
 matplotlib
 seaborn
 pandas
+gym
 git+https://github.com/kenjyoung/MinAtar

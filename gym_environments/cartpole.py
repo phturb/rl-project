@@ -10,6 +10,7 @@ CARTPOLE = {
     'model_path' : 'models/cart_pole_ddqn_dueling.h5',
     'rewards_path': 'rewards/cart_pole_ddqn_dueling.json',
     'plot_path': 'plots/cart_pole_ddqn_dueling.png',
+    'checkpoint_path': 'checkpoints/cart_pole_ddqn_dueling.json',
     'layers' : [16, 32, 16],
     'dueling' : True,
     'success_average' : 195,
@@ -21,7 +22,7 @@ CARTPOLE = {
     'policy_config' : {
         'epsilon' : 1,
         'epsilon_decay' : 0.9995,
-        'epsilon_min' : 0.01,
+        'epsilon_min' : 0.1,
     },
     'agent_config': {
         'warmup_steps': 32,
@@ -33,7 +34,7 @@ CARTPOLE = {
         'gamma': 0.975,
     },
     'test_config': {
-        'n_tests': 1,
+        'n_tests': 100,
     },
 }
 
@@ -47,6 +48,7 @@ CARTPOLE_NO_DUELLING = {
     'model_path' : 'models/cart_pole_ddqn.h5',
     'rewards_path': 'rewards/cart_pole_ddqn.json',
     'plot_path': 'plots/cart_pole_ddqn.png',
+    'checkpoint_path': 'checkpoints/cart_pole_ddqn.json',
     'layers' : [16, 32, 16],
     'dueling' : False,
     'success_average' : 195,
@@ -58,7 +60,7 @@ CARTPOLE_NO_DUELLING = {
     'policy_config' : {
         'epsilon' : 1,
         'epsilon_decay' : 0.9995,
-        'epsilon_min' : 0.01,
+        'epsilon_min' : 0.1,
     },
     'agent_config': {
         'warmup_steps': 32,
@@ -70,6 +72,6 @@ CARTPOLE_NO_DUELLING = {
         'gamma': 0.975,
     },
     'test_config': {
-        'n_tests': 1,
+        'n_tests': 100,
     },
 }

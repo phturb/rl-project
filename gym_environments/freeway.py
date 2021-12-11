@@ -11,11 +11,12 @@ FREEWAY = {
     'model_path' : 'models/freeway_ddqn_dueling.h5',
     'rewards_path': 'rewards/freeway_ddqn_dueling.json',
     'plot_path': 'plots/freeway_ddqn_dueling.png',
+    'checkpoint_path': 'checkpoints/freeway_ddqn_dueling.json',
     'layers' : [64, 128],
     'dueling' : True,
     'success_average' : 20,
     'avg_plot' : True,
-    'avg_window_plot': 1000,
+    'avg_window_plot': 5,
     'memory_config': {
         'max_size': 10000,
     },
@@ -29,12 +30,12 @@ FREEWAY = {
         'target_model_update': 10,
     },
     'train_config': {
-        'max_steps': 1_000_000,
+        'max_steps': 500_000,
         'batch_size': 32,
         'gamma': 0.99,
     },
     'test_config': {
-        'n_tests': 100,
+        'n_tests': 1,
     },
 }
 
@@ -49,11 +50,12 @@ FREEWAY_NO_DUELLING = {
     'model_path' : 'models/freeway_ddqn.h5',
     'rewards_path': 'rewards/freeway_ddqn.json',
     'plot_path': 'plots/freeway_ddqn.png',
+    'checkpoint_path': 'checkpoints/freeway_ddqn.json',
     'layers' : [64, 128],
     'dueling' : False,
     'success_average' : 20,
     'avg_plot' : True,
-    'avg_window_plot': 1000,
+    'avg_window_plot': 5,
     'memory_config': {
         'max_size': 10000,
     },
@@ -67,11 +69,11 @@ FREEWAY_NO_DUELLING = {
         'target_model_update': 10,
     },
     'train_config': {
-        'max_steps': 1_000_000,
+        'max_steps': 500_000,
         'batch_size': 32,
         'gamma': 0.99,
     },
     'test_config': {
-        'n_tests': 100,
+        'n_tests': 1,
     },
 }
