@@ -20,8 +20,8 @@ MOUNTAIN_CAR = {
         'max_size': 50000,
     },
     'policy_config' : {
-        'epsilon' : 0.99,
-        'epsilon_decay' : 0.9,
+        'epsilon' : 1,
+        'epsilon_decay' : 0.999,
         'epsilon_min' : 0.05,
     },
     'agent_config': {
@@ -58,8 +58,8 @@ MOUNTAIN_CAR_NO_DUELLING = {
         'max_size': 50000,
     },
     'policy_config' : {
-        'epsilon' : 0.99,
-        'epsilon_decay' : 0.9,
+        'epsilon' : 1,
+        'epsilon_decay' : 0.999,
         'epsilon_min' : 0.05,
     },
     'agent_config': {

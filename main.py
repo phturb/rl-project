@@ -20,8 +20,8 @@ def run_experience(duelling, non_duelling, plot_compare_path):
 
 if __name__ == "__main__":
     # run_experience(FREEWAY, FREEWAY_NO_DUELLING,  "./plots/freeway_compare.png")
-    run_experience(CARTPOLE, CARTPOLE_NO_DUELLING,  "./plots/cartpole_compare.png")
-    run_experience(BLACKJACK, BLACKJACK_NO_DUELLING,  "./plots/blackjack_compare.png")
-    run_experience(TAXI, TAXI_NO_DUELLING,  "./plots/taxi_compare.png")
-    # run_experience(MOUNTAIN_CAR, MOUNTAIN_CAR_NO_DUELLING,  "./plots/mountain_car_compare.png")
-    run_experience(FROZEN_LAKE, FROZEN_LAKE_NO_DUELLING,  "./plots/frozen_lake_compare.png")
+    # run_experience(CARTPOLE, CARTPOLE_NO_DUELLING,  "./plots/cartpole_compare.png")
+    # run_experience(BLACKJACK, BLACKJACK_NO_DUELLING,  "./plots/blackjack_compare.png")
+    # run_experience(TAXI, TAXI_NO_DUELLING,  "./plots/taxi_compare.png")
+    run_experience(MOUNTAIN_CAR, MOUNTAIN_CAR_NO_DUELLING,  "./plots/mountain_car_compare.png")
+    # run_experience(FROZEN_LAKE, FROZEN_LAKE_NO_DUELLING,  "./plots/frozen_lake_compare.png")

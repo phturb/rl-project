@@ -11,7 +11,7 @@ TAXI = {
     'rewards_path': 'rewards/taxi_ddqn_dueling.json',
     'plot_path': 'plots/taxi_ddqn_dueling.png',
     'checkpoint_path': 'checkpoints/taxi_ddqn_dueling.json',
-    'layers' : [16, 32, 16],
+    'layers' : [32, 64, 16],
     'dueling' : True,
     'success_average' : 8,
     'avg_plot' : True,
@@ -22,14 +22,14 @@ TAXI = {
     'policy_config' : {
         'epsilon' : 1,
         'epsilon_decay' : 0.9999,
-        'epsilon_min' : 0.01,
+        'epsilon_min' : 0.05,
     },
     'agent_config': {
         'warmup_steps': 500,
         'target_model_update': 10,
     },
     'train_config': {
-        'max_steps': 100000,
+        'max_steps': 60000,
         'batch_size': 32,
         'gamma': 0.9,
     },
@@ -49,7 +49,7 @@ TAXI_NO_DUELLING = {
     'rewards_path': 'rewards/taxi_ddqn.json',
     'plot_path': 'plots/taxi_ddqn.png',
     'checkpoint_path': 'checkpoints/taxi_ddqn.json',
-    'layers' : [16, 32, 16],
+    'layers' : [32, 64, 16],
     'dueling' : False,
     'success_average' : 8,
     'avg_plot' : True,
@@ -60,14 +60,14 @@ TAXI_NO_DUELLING = {
     'policy_config' : {
         'epsilon' : 1,
         'epsilon_decay' : 0.9999,
-        'epsilon_min' : 0.01,
+        'epsilon_min' : 0.05,
     },
     'agent_config': {
         'warmup_steps': 500,
         'target_model_update': 10,
     },
     'train_config': {
-        'max_steps': 100000,
+        'max_steps': 60000,
         'batch_size': 32,
         'gamma': 0.9,
     },
